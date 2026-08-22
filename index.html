@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erasure Poetry Interaction Study</title>
+    
+    <style>
+        /* Base page styling */
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #study-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Display Logic: Hide all phases except consent initially */
+        #baseline-q1, #baseline-q2, #baseline-q3,
+        #instruction-pane, #stanza-container, #finish-poem-btn,
+        #post-q1, #post-q2, #post-q3, #post-q4,
+        #final-message {
+            display: none; 
+        }
+
+        /* Phase 0: Informed Consent */
+        .consent-header { font-weight: bold; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .consent-actions { display: flex; gap: 15px; margin-top: 25px; }
+
+        /* Phases 1 & 4: Surveys */
+        .survey-question { margin-bottom: 20px; text-align: left; }
+        .likert-scale { display: flex; justify-content: space-between; max-width: 500px; margin-top: 10px; }
+        .radio-scale { display: flex; justify-content: flex-start; gap: 40px; margin-top: 10px; }
+
+        /* Phases 2 & 3: Task & Canvas */
+        #instruction-pane { font-family: 'Georgia', serif; line-height: 1.6; }
+        #stanza-container { font-family: 'Georgia', serif; font-size: 18px; margin-bottom: 30px; line-height: 1.6; }
+        
+        .erasable-word { cursor: pointer; padding: 0 2px; transition: 0.2s; }
+        .redacted { background-color: #000; color: #000; }
+        .locked .erasable-word { cursor: default; }
+
+        /* Shared Buttons */
+        button { padding: 10px 20px; font-size: 15px; cursor: pointer; background-color: #333; color: white; border: none; border-radius: 4px; }
+        button.decline-btn { background-color: #fff; color: #333; border: 1px solid #ccc; }
+        button.decline-btn:hover { background-color: #f5f5f5; }
+        button:hover { background-color: #555; }
+        button:disabled { background-color: #999; cursor: not-allowed; }
+        
+        footer { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="study-container">
+        
+        <!-- Phase 0: Informed Consent -->
+        <div id="consent-pane">
+            <div class="consent-header">Informed Consent for Participation in Research</div>
+            <p>You are invited to participate in a research study evaluating critical engagement with text. Your participation is completely voluntary.</p>
+            <p><strong>Procedure:</strong> If you agree to participate, you will be asked to complete a brief pre-task survey, read a short stanza of text, perform an interactive erasure task, and answer a few post-task questions. The entire module should take approximately 5 minutes.</p>
+            <p><strong>Risks & Benefits:</strong> There are no anticipated risks to participating in this study beyond those encountered in everyday life. While you may not experience direct benefits, your responses will contribute to our understanding of human-AI interaction.</p>
+            <p><strong>Confidentiality:</strong> Your responses are collected anonymously. No personally identifying information will be linked to your survey answers or your task interactions.</p>
+            <p><strong>Right to Withdraw:</strong> You are free to decline to participate or to withdraw from the study at any time by closing your browser window.</p>
+            <p>By clicking "I Agree" below, you confirm that you are at least 18 years of age, have read the information provided, and voluntarily consent to participate.</p>
+            <div class="consent-actions">
+                <button type="button" id="btn-agree">I Agree, Begin Study</button>
+                <button type="button" id="btn-decline" class="decline-btn">I Do Not Agree</button>
+            </div>
+        </div>
+
+        <!-- Phase 1: Baseline Survey Q1 -->
+        <div id="baseline-q1">
+            <h3>Pre-Task Survey (1 of 3)</h3>
+            <div class="survey-question">
+                <label>1. How comfortable are you with AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="pre_q1" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="pre_q1" value="2"> 2</label>
+                    <label><input type="radio" name="pre_q1" value="3"> 3</label>
+                    <label><input type="radio" name="pre_q1" value="4"> 4</label>
+                    <label><input type="radio" name="pre_q1" value="5"> 5 (Very comfortable)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-q1">Next</button>
+        </div>
+
+        <!-- Phase 1: Baseline Survey Q2 -->
+        <div id="baseline-q2">
+            <h3>Pre-Task Survey (2 of 3)</h3>
+            <div class="survey-question">
+                <label>2. How comfortable are you with critically questioning the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="pre_q2" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="pre_q2" value="2"> 2</label>
+                    <label><input type="radio" name="pre_q2" value="3"> 3</label>
+                    <label><input type="radio" name="pre_q2" value="4"> 4</label>
+                    <label><input type="radio" name="pre_q2" value="5"> 5 (Very comfortable)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-q2">Next</button>
+        </div>
+
+        <!-- Phase 1: Baseline Survey Q3 -->
+        <div id="baseline-q3">
+            <h3>Pre-Task Survey (3 of 3)</h3>
+            <div class="survey-question">
+                <label>3. How confident are you with revising the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="pre_q3" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="pre_q3" value="2"> 2</label>
+                    <label><input type="radio" name="pre_q3" value="3"> 3</label>
+                    <label><input type="radio" name="pre_q3" value="4"> 4</label>
+                    <label><input type="radio" name="pre_q3" value="5"> 5 (Very confident)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-q3">Continue to Instructions</button>
+        </div>
+
+        <!-- Phase 2: Instructions -->
+        <div id="instruction-pane">
+            <h3>Erasure Task Instructions</h3>
+            <p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>
+            <p>Please read the text carefully. You may click on any word to "black it out" and permanently redact it from the stanza. Your objective is to leave behind a new, altered poem.</p>
+            <p>If you change your mind, you can click a blacked-out word again to restore it. Once you are satisfied with your final erasure, click the "Lock Erasure" button to finalize your choices.</p>
+            <button type="button" id="start-erasure-btn">I understand, begin task</button>
+        </div>
+
+        <!-- Phase 3: Erasure Interaction -->
+        <div id="stanza-container"></div>
+        <button type="button" id="finish-poem-btn">Lock Erasure & Continue</button>
+
+        <!-- Phase 4: Post-Task Survey Q1 -->
+        <div id="post-q1">
+            <h3>Post-Task Survey (1 of 4)</h3>
+            <div class="survey-question">
+                <label>4. How comfortable are you with AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="post_q1" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="post_q1" value="2"> 2</label>
+                    <label><input type="radio" name="post_q1" value="3"> 3</label>
+                    <label><input type="radio" name="post_q1" value="4"> 4</label>
+                    <label><input type="radio" name="post_q1" value="5"> 5 (Very comfortable)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-post-q1">Next</button>
+        </div>
+
+        <!-- Phase 4: Post-Task Survey Q2 -->
+        <div id="post-q2">
+            <h3>Post-Task Survey (2 of 4)</h3>
+            <div class="survey-question">
+                <label>5. How comfortable are you with critically questioning the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="post_q2" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="post_q2" value="2"> 2</label>
+                    <label><input type="radio" name="post_q2" value="3"> 3</label>
+                    <label><input type="radio" name="post_q2" value="4"> 4</label>
+                    <label><input type="radio" name="post_q2" value="5"> 5 (Very comfortable)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-post-q2">Next</button>
+        </div>
+
+        <!-- Phase 4: Post-Task Survey Q3 -->
+        <div id="post-q3">
+            <h3>Post-Task Survey (3 of 4)</h3>
+            <div class="survey-question">
+                <label>6. How confident are you with revising the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="post_q3" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="post_q3" value="2"> 2</label>
+                    <label><input type="radio" name="post_q3" value="3"> 3</label>
+                    <label><input type="radio" name="post_q3" value="4"> 4</label>
+                    <label><input type="radio" name="post_q3" value="5"> 5 (Very confident)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-post-q3">Next</button>
+        </div>
+
+        <!-- Phase 4: Post-Task Survey Q4 -->
+        <div id="post-q4">
+            <h3>Post-Task Survey (4 of 4)</h3>
+            <div class="survey-question">
+                <label>7. Do you prefer the AI stanza or your erasure?</label>
+                <div class="radio-scale">
+                    <label><input type="radio" name="post_q4" value="AI Stanza"> The AI Stanza</label>
+                    <label><input type="radio" name="post_q4" value="My Erasure"> My Erasure</label>
+                </div>
+            </div>
+            <button type="button" id="submit-data-btn">Submit Final Data</button>
+        </div>
+
+        <!-- Final Message Container -->
+        <div id="final-message"></div>
+
+    </div> <!-- End study-container -->
+
+    <script>
+        // 0. Global Data Payload Object
+        const studyData = {
+            participant_id: generateID(),
+            start_time: new Date().toISOString(),
+            presented_stanza: "",
+            erased_words: [], 
+            survey_pre: {},
+            survey_post: {}
+        };
+
+        function generateID() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+
+        // 1. DOM Variables
+        const consentPane = document.getElementById('consent-pane');
+        const btnAgree = document.getElementById('btn-agree');
+        const btnDecline = document.getElementById('btn-decline');
+
+        const baselineQ1 = document.getElementById('baseline-q1');
+        const baselineQ2 = document.getElementById('baseline-q2');
+        const baselineQ3 = document.getElementById('baseline-q3');
+        const btnNextQ1 = document.getElementById('btn-next-q1');
+        const btnNextQ2 = document.getElementById('btn-next-q2');
+        const btnNextQ3 = document.getElementById('btn-next-q3');
+
+        const instructionPane = document.getElementById('instruction-pane');
+        const startErasureBtn = document.getElementById('start-erasure-btn');
+        const stanzaContainer = document.getElementById('stanza-container');
+        const finishPoemBtn = document.getElementById('finish-poem-btn');
+
+        const postQ1 = document.getElementById('post-q1');
+        const postQ2 = document.getElementById('post-q2');
+        const postQ3 = document.getElementById('post-q3');
+        const postQ4 = document.getElementById('post-q4');
+        const btnNextPostQ1 = document.getElementById('btn-next-post-q1');
+        const btnNextPostQ2 = document.getElementById('btn-next-post-q2');
+        const btnNextPostQ3 = document.getElementById('btn-next-post-q3');
+        const submitBtn = document.getElementById('submit-data-btn');
+        const finalMessage = document.getElementById('final-message');
+
+        let isLocked = false;
+
+        // 2. Stanza Data
+        const stanzas = [
+            {
+                id: "stanza_A_Tampa",
+                content: `
+                    <span id="word-1" class="erasable-word">Where</span> 
+                    <span id="word-2" class="erasable-word">palm</span> 
+                    <span id="word-3" class="erasable-word">trees</span> 
+                    <span id="word-4" class="erasable-word">lean</span> 
+                    <span id="word-5" class="erasable-word">toward</span> 
+                    <span id="word-6" class="erasable-word">painted</span> 
+                    <span id="word-7" class="erasable-word">poles,</span><br>
+                    <span id="word-8" class="erasable-word">and</span> 
+                    <span id="word-9" class="erasable-word">crossing</span> 
+                    <span id="word-10" class="erasable-word">gates</span> 
+                    <span id="word-11" class="erasable-word">divide</span> 
+                    <span id="word-12" class="erasable-word">the</span> 
+                    <span id="word-13" class="erasable-word">sky,</span><br>
+                    <span id="word-14" class="erasable-word">a</span> 
+                    <span id="word-15" class="erasable-word">quiet</span> 
+                    <span id="word-16" class="erasable-word">street</span> 
+                    <span id="word-17" class="erasable-word">remembers</span> 
+                    <span id="word-18" class="erasable-word">trains</span><br>
+                    <span id="word-19" class="erasable-word">that</span> 
+                    <span id="word-20" class="erasable-word">used</span> 
+                    <span id="word-21" class="erasable-word">to</span> 
+                    <span id="word-22" class="erasable-word">rumble,</span> 
+                    <span id="word-23" class="erasable-word">passing</span> 
+                    <span id="word-24" class="erasable-word">by—</span><br>
+                    <span id="word-25" class="erasable-word">now</span> 
+                    <span id="word-26" class="erasable-word">only</span> 
+                    <span id="word-27" class="erasable-word">clouds</span> 
+                    <span id="word-28" class="erasable-word">move</span> 
+                    <span id="word-29" class="erasable-word">overhead</span><br>
+                    <span id="word-30" class="erasable-word">where</span> 
+                    <span id="word-31" class="erasable-word">steel</span> 
+                    <span id="word-32" class="erasable-word">and</span> 
+                    <span id="word-33" class="erasable-word">memory</span> 
+                    <span id="word-34" class="erasable-word">both</span> 
+                    <span id="word-35" class="erasable-word">lie.</span>`
+            },
+            {
+                id: "stanza_B_New_York",
+                content: `
+                    <span id="word-1" class="erasable-word">Mirrored</span> 
+                    <span id="word-2" class="erasable-word">stillness,</span> 
+                    <span id="word-3" class="erasable-word">nature's</span> 
+                    <span id="word-4" class="erasable-word">jewel,</span><br>
+                    <span id="word-5" class="erasable-word">Glassy</span> 
+                    <span id="word-6" class="erasable-word">waters</span> 
+                    <span id="word-7" class="erasable-word">capture</span> 
+                    <span id="word-8" class="erasable-word">sky's</span> 
+                    <span id="word-9" class="erasable-word">pale</span> 
+                    <span id="word-10" class="erasable-word">hue.</span><br>
+                    <span id="word-11" class="erasable-word">Bare</span> 
+                    <span id="word-12" class="erasable-word">branches</span> 
+                    <span id="word-13" class="erasable-word">etched</span> 
+                    <span id="word-14" class="erasable-word">in</span> 
+                    <span id="word-15" class="erasable-word">liquid</span> 
+                    <span id="word-16" class="erasable-word">pool,</span><br>
+                    <span id="word-17" class="erasable-word">Tranquil</span> 
+                    <span id="word-18" class="erasable-word">beauty</span> 
+                    <span id="word-19" class="erasable-word">ever</span> 
+                    <span id="word-20" class="erasable-word">renews.</span>`
+            },
+            {
+                id: "stanza_C_London",
+                content: `
+                    <span id="word-1" class="erasable-word">A</span> 
+                    <span id="word-2" class="erasable-word">bridge</span> 
+                    <span id="word-3" class="erasable-word">spanning</span> 
+                    <span id="word-4" class="erasable-word">the</span> 
+                    <span id="word-5" class="erasable-word">river,</span><br>
+                    <span id="word-6" class="erasable-word">Connecting</span> 
+                    <span id="word-7" class="erasable-word">shores,</span> 
+                    <span id="word-8" class="erasable-word">a</span> 
+                    <span id="word-9" class="erasable-word">link</span> 
+                    <span id="word-10" class="erasable-word">so</span> 
+                    <span id="word-11" class="erasable-word">clever.</span><br>
+                    <span id="word-12" class="erasable-word">Clouds</span> 
+                    <span id="word-13" class="erasable-word">above,</span> 
+                    <span id="word-14" class="erasable-word">a</span> 
+                    <span id="word-15" class="erasable-word">somber</span> 
+                    <span id="word-16" class="erasable-word">sky,</span><br>
+                    <span id="word-17" class="erasable-word">Reflecting</span> 
+                    <span id="word-18" class="erasable-word">on</span> 
+                    <span id="word-19" class="erasable-word">the</span> 
+                    <span id="word-20" class="erasable-word">waters</span> 
+                    <span id="word-21" class="erasable-word">nearby.</span>`
+            }
+        ];
+
+        // 3. Initialize Random Stanza
+        const randomIndex = Math.floor(Math.random() * stanzas.length);
+        const chosenStanza = stanzas[randomIndex];
+        studyData.presented_stanza = chosenStanza.id; 
+        stanzaContainer.innerHTML = chosenStanza.content; 
+
+        // 4. Flow transitions
+        btnAgree.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            baselineQ1.style.display = 'block';
+        });
+
+        btnDecline.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            finalMessage.innerHTML = "<h3>You have declined to participate. You may close this window.</h3>";
+            finalMessage.style.display = 'block';
+        });
+
+        btnNextQ1.addEventListener('click', () => { baselineQ1.style.display = 'none'; baselineQ2.style.display = 'block'; });
+        btnNextQ2.addEventListener('click', () => { baselineQ2.style.display = 'none'; baselineQ3.style.display = 'block'; });
+        btnNextQ3.addEventListener('click', () => { baselineQ3.style.display = 'none'; instructionPane.style.display = 'block'; });
+
+        startErasureBtn.addEventListener('click', () => {
+            instructionPane.style.display = 'none'; 
+            stanzaContainer.style.display = 'block'; 
+            finishPoemBtn.style.display = 'block'; 
+        });
+
+        // 5. Canvas Logic 
+        stanzaContainer.addEventListener('click', (event) => {
+            if (isLocked) return; 
+            
+            if (event.target.classList.contains('erasable-word')) {
+                const wordId = event.target.id;
+                const isNowRedacted = event.target.classList.toggle('redacted');
+                
+                studyData.erased_words.push({
+                    word_id: wordId,
+                    action: isNowRedacted ? "erased" : "restored",
+                    timestamp: Date.now()
+                });
+            }
+        });
+
+        finishPoemBtn.addEventListener('click', () => {
+            isLocked = true;
+            stanzaContainer.classList.add('locked');
+            stanzaContainer.style.display = 'none'; 
+            finishPoemBtn.style.display = 'none'; 
+            postQ1.style.display = 'block'; 
+        });
+
+        btnNextPostQ1.addEventListener('click', () => { postQ1.style.display = 'none'; postQ2.style.display = 'block'; });
+        btnNextPostQ2.addEventListener('click', () => { postQ2.style.display = 'none'; postQ3.style.display = 'block'; });
+        btnNextPostQ3.addEventListener('click', () => { postQ3.style.display = 'none'; postQ4.style.display = 'block'; });
+
+        // 6. Final Data Collection and Dispatch
+        submitBtn.addEventListener('click', async () => {
+            
+            const getScore = (questionName) => {
+                const answer = document.querySelector(`input[name="${questionName}"]:checked`);
+                return answer ? answer.value : "NA";
+            };
+
+            studyData.survey_pre.ai_comfort = getScore("pre_q1");
+            studyData.survey_pre.ai_critical = getScore("pre_q2");
+            studyData.survey_pre.ai_revise = getScore("pre_q3");
+
+            studyData.survey_post.ai_comfort = getScore("post_q1");
+            studyData.survey_post.ai_critical = getScore("post_q2");
+            studyData.survey_post.ai_revise = getScore("post_q3");
+            studyData.survey_post.preference = getScore("post_q4");
+            
+            const finalRedactedElements = document.querySelectorAll('.redacted');
+            studyData.final_erasure_state = Array.from(finalRedactedElements).map(el => el.id);
+            studyData.end_time = new Date().toISOString();
+
+            // Replace this with your actual DataPipe experiment ID when ready
+            const DATAPIPE_EXPERIMENT_ID = "ZYrmvKgtC9Zg"; 
+            
+            postQ4.style.display = 'none';
+            finalMessage.innerHTML = "<h3>Saving data... please wait.</h3>";
+            finalMessage.style.display = 'block';
+
+            try {
+                const response = await fetch("https://pipe.jspsych.org/api/data/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "*/*",
+                    },
+                    body: JSON.stringify({
+                        experimentID: "ZYrmvKgtC9Zg",
+                        filename: `${studyData.participant_id}_data.json`,
+                        data: JSON.stringify(studyData)
+                    })
+                });
+
+                if (response.ok) {
+                    finalMessage.innerHTML = "<h3>Thank you! Your responses have been recorded. You may close this window.</h3>";
+                } else {
+                    throw new Error("Network response was not ok.");
+                }
+            } catch (error) {
+                console.error("Error saving data:", error);
+                finalMessage.innerHTML = "<h3>There was an error saving your data. Please contact the researcher.</h3>";
+            }
+        });
+    </script>
+</body>
+</html>
