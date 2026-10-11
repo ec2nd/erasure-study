@@ -68,40 +68,15 @@
     <div id="study-container">
         
         <!-- Phase 0: Informed Consent -->
- <!-- Phase 0: Informed Consent -->
- <div id="consent-pane">
- <div class="consent-header">Informed Consent for Participation in
-Research</div>
- <p>You are invited to participate in a research study evaluating erasure
-poetry practices as a mode of critical engagement with AI output. Your participation
-is completely voluntary.</p>
- <p><strong>Procedure:</strong> If you agree to participate, you will be
-asked to complete a brief pre-task survey, you will be shown a stanza of poetry
-produced by AI, you will perform an interactive erasure task, and answer a few
-post-task questions. The entire module should take approximately 5 minutes.</p>
- <p><strong>Risks & Benefits:</strong> There are no anticipated risks to
-participating in this study beyond those encountered in everyday life. While you may
-not experience direct benefits, your responses will contribute to our understanding
-of human-AI interaction.</p>
- <p><strong>Confidentiality:</strong> Your responses will be timestamped
-and collected anonymously. Please do not enter personally identifying information.
-No personally identifying information will be linked to your survey answers or your
-task interactions.</p>
- <p><strong>Right to Withdraw:</strong> You are free to decline to
-participate or to withdraw from the study at any time by closing your browser
-window. However, any data already entered will be transferred to the open-access
-repository at Open Science Foundation
-(https://osf.io/4j9r5/overview?view_only=8a3cefe540ae4a4ba12da6069ef4265a).</p>
- <p><strong>If you have any questions or would like a complete copy of
-the Participant Information Sheet, please contact Edward Wells
-(edward.wells@uopeople.edu / ecw.the.2nd@gmail.com) with Erasure Practice as Critical
-Engagement with AI Output in the subject line.</strong></p>
- <p><strong>In case of complaints:</strong>
-Any concerns about the study should be directed to Edward Wells
-(edward.wells@uopeople.edu / ecw.the.2nd@gmail.com).</p>
- <p>By clicking "I Agree" below, you confirm that you are at least 18
-years of age, have read the information provided, and voluntarily consent to
-participate.</p>
+        <div id="consent-pane">
+            <div class="consent-header">Informed Consent for Participation in Research</div>
+            <p>You are invited to participate in a research study evaluating erasure poetry practices as a mode of critical engagement with AI output. Your participation is completely voluntary.</p>
+            <p><strong>Procedure:</strong> If you agree to participate, you will be asked to complete a brief pre-task survey, you will be shown a stanza of poetry produced by AI, you will perform an interactive erasure task, and answer a few post-task questions. The entire module should take approximately 5 minutes.</p>
+            <p><strong>Risks & Benefits:</strong> There are no anticipated risks to participating in this study beyond those encountered in everyday life. While you may not experience direct benefits, your responses will contribute to our understanding of human-AI interaction.</p>
+            <p><strong>Confidentiality:</strong> Your responses will be timestamped and collected anonymously. No personally identifying information will be linked to your survey answers or your task interactions.</p>
+            <p><strong>Right to Withdraw:</strong> You are free to decline to participate or to withdraw from the study at any time by closing your browser window.</p>
+            <p><strong>If you have questions or concerns, contact Edward Wells at ecw.the.2nd@gmail.com.</strong></p>
+            <p>By clicking "I Agree" below, you confirm that you are at least 18 years of age, have read the information provided, and voluntarily consent to participate.</p>
             <div class="consent-actions">
                 <button type="button" id="btn-agree">I Agree, Begin Study</button>
                 <button type="button" id="btn-decline" class="decline-btn">I Do Not Agree</button>
@@ -364,3 +339,166 @@ participate.</p>
             const button = document.getElementById(buttonId);
             container.addEventListener('change', () => {
                 let allAnswered = true;
+                for (const group of radioGroups) {
+                    // Check if group is required based on visibility (skips Q3 for control)
+                    const inputs = document.querySelectorAll(`input[name="${group}"]`);
+                    const isVisible = inputs.length > 0 && inputs[0].closest('.survey-question').style.display !== 'none';
+                    
+                    if (isVisible && !document.querySelector(`input[name="${group}"]:checked`)) {
+                        allAnswered = false;
+                        break;
+                    }
+                }
+                button.disabled = !allAnswered;
+            });
+        }
+
+        enableButtonWhenAnswered('preliminary-survey', 'btn-next-prelim', ['prelim_student', 'prelim_repeat']);
+        enableButtonWhenAnswered('baseline-survey', 'btn-next-pre', ['pre_freq', 'pre_critical', 'pre_revise']);
+        enableButtonWhenAnswered('post-survey-a', 'submit-btn-a', ['post_a_critical', 'post_a_revise', 'post_a_pref']);
+
+        // 6. Flow transitions
+        btnAgree.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            preliminarySurvey.style.display = 'block';
+        });
+
+        btnDecline.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            finalMessage.innerHTML = "<h3>You have declined to participate. You may close this window.</h3>";
+            finalMessage.style.display = 'block';
+        });
+
+        btnNextPrelim.addEventListener('click', () => {
+            preliminarySurvey.style.display = 'none';
+            baselineSurvey.style.display = 'block';
+        });
+
+        btnNextPre.addEventListener('click', () => {
+            baselineSurvey.style.display = 'none';
+            
+            // Adjust instructions dynamically based on condition
+            if (taskCondition === 'control') {
+                instructionPane.innerHTML = `
+                    <h3>Task Instructions</h3>
+                    <p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>
+                    <p>Please read the stanza carefully.</p>
+                    <button type="button" id="start-task-btn">I understand, begin task</button>
+                `;
+            } else {
+                instructionPane.innerHTML = `
+                    <h3>Erasure Task Instructions</h3>
+                    <p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>
+                    <p>Please produce from this an erasure poem. You may click on any word to "black it out."</p>
+                    <p>If you change your mind, you can click a blacked-out word again to restore it. Once you are satisfied with your final erasure, click the "Lock Erasure" button to finalize your choices.</p>
+                    <button type="button" id="start-task-btn">I understand, begin task</button>
+                `;
+            }
+            
+            instructionPane.style.display = 'block';
+
+            // Bind the dynamically created button
+            document.getElementById('start-task-btn').addEventListener('click', () => {
+                instructionPane.style.display = 'none'; 
+                stanzaContainer.style.display = 'block'; 
+                finishPoemBtn.style.display = 'block'; 
+                
+                studyData.stanza_start_time = Date.now();
+
+                // Apply Control Condition constraints
+                if (taskCondition === 'control') {
+                    isLocked = true;
+                    stanzaContainer.classList.add('locked');
+                    finishPoemBtn.innerText = "Done Reading & Continue";
+                    
+                    // Hide Preference Question (Q3) in Post Survey since they didn't erase
+                    const q3 = document.querySelector('input[name="post_a_pref"]').closest('.survey-question');
+                    q3.style.display = 'none';
+                }
+            });
+        });
+
+        // 7. Canvas Logic 
+        stanzaContainer.addEventListener('click', (event) => {
+            if (isLocked) return; 
+            
+            if (event.target.classList.contains('erasable-word')) {
+                const wordId = event.target.id;
+                const isNowRedacted = event.target.classList.toggle('redacted');
+                
+                studyData.erased_words.push({
+                    word_id: wordId,
+                    action: isNowRedacted ? "erased" : "restored",
+                    timestamp: Date.now()
+                });
+            }
+        });
+
+        finishPoemBtn.addEventListener('click', () => {
+            isLocked = true;
+            stanzaContainer.classList.add('locked');
+            stanzaContainer.style.display = 'none'; 
+            finishPoemBtn.style.display = 'none'; 
+            
+            postSurveyA.style.display = 'block';
+        });
+
+        // 8. Final Data Collection and Dispatch
+        const handleSubmission = async () => {
+            const getScore = (questionName) => {
+                const answer = document.querySelector(`input[name="${questionName}"]:checked`);
+                return answer ? answer.value : "NA";
+            };
+
+            studyData.survey_prelim.enrolled_student = getScore("prelim_student");
+            studyData.survey_prelim.previously_completed = getScore("prelim_repeat");
+
+            studyData.survey_pre.ai_freq = getScore("pre_freq");
+            studyData.survey_pre.ai_critical = getScore("pre_critical");
+            studyData.survey_pre.ai_revise = getScore("pre_revise");
+
+            studyData.survey_post.ai_critical = getScore("post_a_critical");
+            studyData.survey_post.ai_revise = getScore("post_a_revise");
+            
+            // Only grab preference if they were in the experimental group
+            if (taskCondition === 'experimental') {
+                studyData.survey_post.preference = getScore("post_a_pref");
+            }
+            
+            const finalRedactedElements = document.querySelectorAll('.redacted');
+            studyData.final_erasure_state = Array.from(finalRedactedElements).map(el => el.id);
+            studyData.end_time = new Date().toISOString();
+
+            postSurveyA.style.display = 'none';
+            finalMessage.innerHTML = "<h3>Saving data... please wait.</h3>";
+            finalMessage.style.display = 'block';
+
+            try {
+                const response = await fetch("https://pipe.jspsych.org/api/data/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "*/*",
+                    },
+                    body: JSON.stringify({
+                        experimentID: "ZYrmvKgtC9Zg",
+                        filename: `${pageBaseName}_${studyData.participant_id}_data.json`,
+                        data: JSON.stringify(studyData)
+                    })
+                });
+
+                if (response.ok) {
+                    finalMessage.innerHTML = "<h3>Thank you! Your responses have been recorded. You may close this window.</h3>";
+                } else {
+                    throw new Error("Network response was not ok.");
+                }
+            } catch (error) {
+                console.error("Error saving data:", error);
+                finalMessage.innerHTML = "<h3>There was an error saving your data. Please contact the researcher.</h3>";
+            }
+        };
+
+        submitBtnA.addEventListener('click', handleSubmission);
+    </script>
+</body>
+</html>
