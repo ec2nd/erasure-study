@@ -30,9 +30,14 @@
         }
 
         /* Display Logic: Hide all phases except consent initially */
-        #preliminary-survey, #baseline-survey, #instruction-pane, 
-        #stanza-container, #finish-poem-btn, #post-survey-a, #final-message {
-            display: none; 
+        #preliminary-survey,
+        #baseline-survey,
+        #instruction-pane,
+        #stanza-container,
+        #finish-poem-btn,
+        #post-survey-a,
+        #final-message {
+            display: none;
         }
 
         /* Phase 0: Informed Consent */
@@ -55,12 +60,11 @@
         .locked .erasable-word { cursor: default; }
 
         /* Shared Buttons */
-        button { padding: 10px 20px; font-size: 15px; cursor: pointer; background-color: #333; color: white; border: none; border-radius: 4px; margin-top: 10px;}
+        button { padding: 10px 20px; font-size: 15px; cursor: pointer; background-color: #333; color: white; border: none; border-radius: 4px; margin-top: 10px; }
         button.decline-btn { background-color: #fff; color: #333; border: 1px solid #ccc; }
         button.decline-btn:hover { background-color: #f5f5f5; }
         button:hover { background-color: #555; }
         button:disabled { background-color: #aaa; cursor: not-allowed; }
-        
     </style>
 </head>
 <body>
@@ -188,8 +192,9 @@
 
     <script>
         // Detect current HTML filename from URL path (defaults to 'index.html' if root)
-        const currentPageFile = window.location.pathname.split('/').pop() || 'index.html';
-        const pageBaseName = currentPageFile.replace(/\.[^/.]+\$/, ""); // Strips .html for clean OSF filenames
+        const pathParts = window.location.pathname.split('/');
+        const currentPageFile = pathParts.pop() || 'index.html';
+        const pageBaseName = currentPageFile.split('.')[0] || 'study';
 
         // 0. Global Data Payload Object
         const studyData = {
@@ -197,10 +202,11 @@
             source_page: currentPageFile,
             source_url: window.location.href,
             start_time: new Date().toISOString(),
-            task_condition: "", // Tracks control vs experimental
+            task_condition: "",
             presented_stanza: "",
-            stanza_start_time: null, 
-            erased_words: [], 
+            stanza_start_time: null,
+            stanza_end_time: null,
+            erased_words: [],
             survey_prelim: {},
             survey_pre: {},
             survey_post: {}
@@ -235,116 +241,130 @@
 
         let isLocked = false;
 
-        // 3. Stanza Data
+        // 3. Bind Consent Buttons Immediately
+        btnAgree.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            preliminarySurvey.style.display = 'block';
+        });
+
+        btnDecline.addEventListener('click', () => {
+            consentPane.style.display = 'none';
+            finalMessage.innerHTML = "<h3>You have declined to participate. You may close this window.</h3>";
+            finalMessage.style.display = 'block';
+        });
+
+        // 4. Stanza Data
         const stanzas = [
             {
                 id: "stanza_A_Tampa",
-                content: `
-                    <span id="word-1" class="erasable-word">Where</span> 
-                    <span id="word-2" class="erasable-word">palm</span> 
-                    <span id="word-3" class="erasable-word">trees</span> 
-                    <span id="word-4" class="erasable-word">lean</span> 
-                    <span id="word-5" class="erasable-word">toward</span> 
-                    <span id="word-6" class="erasable-word">painted</span> 
-                    <span id="word-7" class="erasable-word">poles,</span><br>
-                    <span id="word-8" class="erasable-word">and</span> 
-                    <span id="word-9" class="erasable-word">crossing</span> 
-                    <span id="word-10" class="erasable-word">gates</span> 
-                    <span id="word-11" class="erasable-word">divide</span> 
-                    <span id="word-12" class="erasable-word">the</span> 
-                    <span id="word-13" class="erasable-word">sky,</span><br>
-                    <span id="word-14" class="erasable-word">a</span> 
-                    <span id="word-15" class="erasable-word">quiet</span> 
-                    <span id="word-16" class="erasable-word">street</span> 
-                    <span id="word-17" class="erasable-word">remembers</span> 
-                    <span id="word-18" class="erasable-word">trains</span><br>
-                    <span id="word-19" class="erasable-word">that</span> 
-                    <span id="word-20" class="erasable-word">used</span> 
-                    <span id="word-21" class="erasable-word">to</span> 
-                    <span id="word-22" class="erasable-word">rumble,</span> 
-                    <span id="word-23" class="erasable-word">passing</span> 
-                    <span id="word-24" class="erasable-word">by—</span><br>
-                    <span id="word-25" class="erasable-word">now</span> 
-                    <span id="word-26" class="erasable-word">only</span> 
-                    <span id="word-27" class="erasable-word">clouds</span> 
-                    <span id="word-28" class="erasable-word">move</span> 
-                    <span id="word-29" class="erasable-word">overhead</span><br>
-                    <span id="word-30" class="erasable-word">where</span> 
-                    <span id="word-31" class="erasable-word">steel</span> 
-                    <span id="word-32" class="erasable-word">and</span> 
-                    <span id="word-33" class="erasable-word">memory</span> 
-                    <span id="word-34" class="erasable-word">both</span> 
-                    <span id="word-35" class="erasable-word">lie.</span>`
+                content:
+                    '<span id="word-1" class="erasable-word">Where</span> ' +
+                    '<span id="word-2" class="erasable-word">palm</span> ' +
+                    '<span id="word-3" class="erasable-word">trees</span> ' +
+                    '<span id="word-4" class="erasable-word">lean</span> ' +
+                    '<span id="word-5" class="erasable-word">toward</span> ' +
+                    '<span id="word-6" class="erasable-word">painted</span> ' +
+                    '<span id="word-7" class="erasable-word">poles,</span><br>' +
+                    '<span id="word-8" class="erasable-word">and</span> ' +
+                    '<span id="word-9" class="erasable-word">crossing</span> ' +
+                    '<span id="word-10" class="erasable-word">gates</span> ' +
+                    '<span id="word-11" class="erasable-word">divide</span> ' +
+                    '<span id="word-12" class="erasable-word">the</span> ' +
+                    '<span id="word-13" class="erasable-word">sky,</span><br>' +
+                    '<span id="word-14" class="erasable-word">a</span> ' +
+                    '<span id="word-15" class="erasable-word">quiet</span> ' +
+                    '<span id="word-16" class="erasable-word">street</span> ' +
+                    '<span id="word-17" class="erasable-word">remembers</span> ' +
+                    '<span id="word-18" class="erasable-word">trains</span><br>' +
+                    '<span id="word-19" class="erasable-word">that</span> ' +
+                    '<span id="word-20" class="erasable-word">used</span> ' +
+                    '<span id="word-21" class="erasable-word">to</span> ' +
+                    '<span id="word-22" class="erasable-word">rumble,</span> ' +
+                    '<span id="word-23" class="erasable-word">passing</span> ' +
+                    '<span id="word-24" class="erasable-word">by—</span><br>' +
+                    '<span id="word-25" class="erasable-word">now</span> ' +
+                    '<span id="word-26" class="erasable-word">only</span> ' +
+                    '<span id="word-27" class="erasable-word">clouds</span> ' +
+                    '<span id="word-28" class="erasable-word">move</span> ' +
+                    '<span id="word-29" class="erasable-word">overhead</span><br>' +
+                    '<span id="word-30" class="erasable-word">where</span> ' +
+                    '<span id="word-31" class="erasable-word">steel</span> ' +
+                    '<span id="word-32" class="erasable-word">and</span> ' +
+                    '<span id="word-33" class="erasable-word">memory</span> ' +
+                    '<span id="word-34" class="erasable-word">both</span> ' +
+                    '<span id="word-35" class="erasable-word">lie.</span>'
             },
             {
                 id: "stanza_B_New_York",
-                content: `
-                    <span id="word-1" class="erasable-word">Mirrored</span> 
-                    <span id="word-2" class="erasable-word">stillness,</span> 
-                    <span id="word-3" class="erasable-word">nature's</span> 
-                    <span id="word-4" class="erasable-word">jewel,</span><br>
-                    <span id="word-5" class="erasable-word">Glassy</span> 
-                    <span id="word-6" class="erasable-word">waters</span> 
-                    <span id="word-7" class="erasable-word">capture</span> 
-                    <span id="word-8" class="erasable-word">sky's</span> 
-                    <span id="word-9" class="erasable-word">pale</span> 
-                    <span id="word-10" class="erasable-word">hue.</span><br>
-                    <span id="word-11" class="erasable-word">Bare</span> 
-                    <span id="word-12" class="erasable-word">branches</span> 
-                    <span id="word-13" class="erasable-word">etched</span> 
-                    <span id="word-14" class="erasable-word">in</span> 
-                    <span id="word-15" class="erasable-word">liquid</span> 
-                    <span id="word-16" class="erasable-word">pool,</span><br>
-                    <span id="word-17" class="erasable-word">Tranquil</span> 
-                    <span id="word-18" class="erasable-word">beauty</span> 
-                    <span id="word-19" class="erasable-word">ever</span> 
-                    <span id="word-20" class="erasable-word">renews.</span>`
+                content:
+                    '<span id="word-1" class="erasable-word">Mirrored</span> ' +
+                    '<span id="word-2" class="erasable-word">stillness,</span> ' +
+                    '<span id="word-3" class="erasable-word">nature\'s</span> ' +
+                    '<span id="word-4" class="erasable-word">jewel,</span><br>' +
+                    '<span id="word-5" class="erasable-word">Glassy</span> ' +
+                    '<span id="word-6" class="erasable-word">waters</span> ' +
+                    '<span id="word-7" class="erasable-word">capture</span> ' +
+                    '<span id="word-8" class="erasable-word">sky\'s</span> ' +
+                    '<span id="word-9" class="erasable-word">pale</span> ' +
+                    '<span id="word-10" class="erasable-word">hue.</span><br>' +
+                    '<span id="word-11" class="erasable-word">Bare</span> ' +
+                    '<span id="word-12" class="erasable-word">branches</span> ' +
+                    '<span id="word-13" class="erasable-word">etched</span> ' +
+                    '<span id="word-14" class="erasable-word">in</span> ' +
+                    '<span id="word-15" class="erasable-word">liquid</span> ' +
+                    '<span id="word-16" class="erasable-word">pool,</span><br>' +
+                    '<span id="word-17" class="erasable-word">Tranquil</span> ' +
+                    '<span id="word-18" class="erasable-word">beauty</span> ' +
+                    '<span id="word-19" class="erasable-word">ever</span> ' +
+                    '<span id="word-20" class="erasable-word">renews.</span>'
             },
             {
                 id: "stanza_C_London",
-                content: `
-                    <span id="word-1" class="erasable-word">A</span> 
-                    <span id="word-2" class="erasable-word">bridge</span> 
-                    <span id="word-3" class="erasable-word">spanning</span> 
-                    <span id="word-4" class="erasable-word">the</span> 
-                    <span id="word-5" class="erasable-word">river,</span><br>
-                    <span id="word-6" class="erasable-word">Connecting</span> 
-                    <span id="word-7" class="erasable-word">shores,</span> 
-                    <span id="word-8" class="erasable-word">a</span> 
-                    <span id="word-9" class="erasable-word">link</span> 
-                    <span id="word-10" class="erasable-word">so</span> 
-                    <span id="word-11" class="erasable-word">clever.</span><br>
-                    <span id="word-12" class="erasable-word">Clouds</span> 
-                    <span id="word-13" class="erasable-word">above,</span> 
-                    <span id="word-14" class="erasable-word">a</span> 
-                    <span id="word-15" class="erasable-word">somber</span> 
-                    <span id="word-16" class="erasable-word">sky,</span><br>
-                    <span id="word-17" class="erasable-word">Reflecting</span> 
-                    <span id="word-18" class="erasable-word">on</span> 
-                    <span id="word-19" class="erasable-word">the</span> 
-                    <span id="word-20" class="erasable-word">waters</span> 
-                    <span id="word-21" class="erasable-word">nearby.</span>`
+                content:
+                    '<span id="word-1" class="erasable-word">A</span> ' +
+                    '<span id="word-2" class="erasable-word">bridge</span> ' +
+                    '<span id="word-3" class="erasable-word">spanning</span> ' +
+                    '<span id="word-4" class="erasable-word">the</span> ' +
+                    '<span id="word-5" class="erasable-word">river,</span><br>' +
+                    '<span id="word-6" class="erasable-word">Connecting</span> ' +
+                    '<span id="word-7" class="erasable-word">shores,</span> ' +
+                    '<span id="word-8" class="erasable-word">a</span> ' +
+                    '<span id="word-9" class="erasable-word">link</span> ' +
+                    '<span id="word-10" class="erasable-word">so</span> ' +
+                    '<span id="word-11" class="erasable-word">clever.</span><br>' +
+                    '<span id="word-12" class="erasable-word">Clouds</span> ' +
+                    '<span id="word-13" class="erasable-word">above,</span> ' +
+                    '<span id="word-14" class="erasable-word">a</span> ' +
+                    '<span id="word-15" class="erasable-word">somber</span> ' +
+                    '<span id="word-16" class="erasable-word">sky,</span><br>' +
+                    '<span id="word-17" class="erasable-word">Reflecting</span> ' +
+                    '<span id="word-18" class="erasable-word">on</span> ' +
+                    '<span id="word-19" class="erasable-word">the</span> ' +
+                    '<span id="word-20" class="erasable-word">waters</span> ' +
+                    '<span id="word-21" class="erasable-word">nearby.</span>'
             }
         ];
 
-        // 4. Initialize Random Stanza
+        // 5. Initialize Random Stanza
         const randomIndex = Math.floor(Math.random() * stanzas.length);
         const chosenStanza = stanzas[randomIndex];
-        studyData.presented_stanza = chosenStanza.id; 
-        stanzaContainer.innerHTML = chosenStanza.content; 
+        studyData.presented_stanza = chosenStanza.id;
+        stanzaContainer.innerHTML = chosenStanza.content;
 
-        // 5. Validation Logic Helper
+        // 6. Validation Logic Helper
         function enableButtonWhenAnswered(containerId, buttonId, radioGroups) {
             const container = document.getElementById(containerId);
             const button = document.getElementById(buttonId);
+            if (!container || !button) return;
+
             container.addEventListener('change', () => {
                 let allAnswered = true;
                 for (const group of radioGroups) {
-                    // Check if group is required based on visibility (skips Q3 for control)
-                    const inputs = document.querySelectorAll(`input[name="${group}"]`);
+                    const selector = 'input[name="' + group + '"]';
+                    const inputs = document.querySelectorAll(selector);
                     const isVisible = inputs.length > 0 && inputs[0].closest('.survey-question').style.display !== 'none';
                     
-                    if (isVisible && !document.querySelector(`input[name="${group}"]:checked`)) {
+                    if (isVisible && !document.querySelector(selector + ':checked')) {
                         allAnswered = false;
                         break;
                     }
@@ -357,18 +377,7 @@
         enableButtonWhenAnswered('baseline-survey', 'btn-next-pre', ['pre_freq', 'pre_critical', 'pre_revise']);
         enableButtonWhenAnswered('post-survey-a', 'submit-btn-a', ['post_a_critical', 'post_a_revise', 'post_a_pref']);
 
-        // 6. Flow transitions
-        btnAgree.addEventListener('click', () => {
-            consentPane.style.display = 'none';
-            preliminarySurvey.style.display = 'block';
-        });
-
-        btnDecline.addEventListener('click', () => {
-            consentPane.style.display = 'none';
-            finalMessage.innerHTML = "<h3>You have declined to participate. You may close this window.</h3>";
-            finalMessage.style.display = 'block';
-        });
-
+        // 7. Subsequent Flow Transitions
         btnNextPrelim.addEventListener('click', () => {
             preliminarySurvey.style.display = 'none';
             baselineSurvey.style.display = 'block';
@@ -377,50 +386,44 @@
         btnNextPre.addEventListener('click', () => {
             baselineSurvey.style.display = 'none';
             
-            // Adjust instructions dynamically based on condition
             if (taskCondition === 'control') {
-                instructionPane.innerHTML = `
-                    <h3>Task Instructions</h3>
-                    <p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>
-                    <p>Please read the stanza carefully.</p>
-                    <button type="button" id="start-task-btn">I understand, begin task</button>
-                `;
+                instructionPane.innerHTML =
+                    '<h3>Task Instructions</h3>' +
+                    '<p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>' +
+                    '<p>Please read the stanza carefully.</p>' +
+                    '<button type="button" id="start-task-btn">I understand, begin task</button>';
             } else {
-                instructionPane.innerHTML = `
-                    <h3>Erasure Task Instructions</h3>
-                    <p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>
-                    <p>Please produce from this an erasure poem. You may click on any word to "black it out."</p>
-                    <p>If you change your mind, you can click a blacked-out word again to restore it. Once you are satisfied with your final erasure, click the "Lock Erasure" button to finalize your choices.</p>
-                    <button type="button" id="start-task-btn">I understand, begin task</button>
-                `;
+                instructionPane.innerHTML =
+                    '<h3>Erasure Task Instructions</h3>' +
+                    '<p>In the following module, you will be presented with a short stanza of poetry generated by an AI model based on a photograph.</p>' +
+                    '<p>Please produce from this an erasure poem. You may click on any word to "black it out."</p>' +
+                    '<p>If you change your mind, you can click a blacked-out word again to restore it. Once you are satisfied with your final erasure, click the "Lock Erasure" button to finalize your choices.</p>' +
+                    '<button type="button" id="start-task-btn">I understand, begin task</button>';
             }
             
             instructionPane.style.display = 'block';
 
-            // Bind the dynamically created button
             document.getElementById('start-task-btn').addEventListener('click', () => {
-                instructionPane.style.display = 'none'; 
-                stanzaContainer.style.display = 'block'; 
-                finishPoemBtn.style.display = 'block'; 
+                instructionPane.style.display = 'none';
+                stanzaContainer.style.display = 'block';
+                finishPoemBtn.style.display = 'block';
                 
                 studyData.stanza_start_time = Date.now();
 
-                // Apply Control Condition constraints
                 if (taskCondition === 'control') {
                     isLocked = true;
                     stanzaContainer.classList.add('locked');
                     finishPoemBtn.innerText = "Done Reading & Continue";
                     
-                    // Hide Preference Question (Q3) in Post Survey since they didn't erase
                     const q3 = document.querySelector('input[name="post_a_pref"]').closest('.survey-question');
                     q3.style.display = 'none';
                 }
             });
         });
 
-        // 7. Canvas Logic 
+        // 8. Canvas Logic
         stanzaContainer.addEventListener('click', (event) => {
-            if (isLocked) return; 
+            if (isLocked) return;
             
             if (event.target.classList.contains('erasable-word')) {
                 const wordId = event.target.id;
@@ -436,17 +439,18 @@
 
         finishPoemBtn.addEventListener('click', () => {
             isLocked = true;
+            studyData.stanza_end_time = Date.now();
             stanzaContainer.classList.add('locked');
-            stanzaContainer.style.display = 'none'; 
-            finishPoemBtn.style.display = 'none'; 
+            stanzaContainer.style.display = 'none';
+            finishPoemBtn.style.display = 'none';
             
             postSurveyA.style.display = 'block';
         });
 
-        // 8. Final Data Collection and Dispatch
+        // 9. Final Data Collection and Dispatch
         const handleSubmission = async () => {
             const getScore = (questionName) => {
-                const answer = document.querySelector(`input[name="${questionName}"]:checked`);
+                const answer = document.querySelector('input[name="' + questionName + '"]:checked');
                 return answer ? answer.value : "NA";
             };
 
@@ -460,7 +464,6 @@
             studyData.survey_post.ai_critical = getScore("post_a_critical");
             studyData.survey_post.ai_revise = getScore("post_a_revise");
             
-            // Only grab preference if they were in the experimental group
             if (taskCondition === 'experimental') {
                 studyData.survey_post.preference = getScore("post_a_pref");
             }
@@ -478,11 +481,11 @@
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Accept": "*/*",
+                        "Accept": "*/*"
                     },
                     body: JSON.stringify({
                         experimentID: "ZYrmvKgtC9Zg",
-                        filename: `${pageBaseName}_${studyData.participant_id}_data.json`,
+                        filename: pageBaseName + "_" + studyData.participant_id + "_data.json",
                         data: JSON.stringify(studyData)
                     })
                 });
