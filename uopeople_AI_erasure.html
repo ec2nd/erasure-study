@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erasure Poetry Interaction Study</title>
+    
+    <style>
+        /* Base page styling */
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #study-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Display Logic: Hide all phases except consent initially */
+        #preliminary-survey, #baseline-survey, #instruction-pane, 
+        #stanza-container, #finish-poem-btn, #post-survey-a, #final-message {
+            display: none; 
+        }
+
+        /* Phase 0: Informed Consent */
+        .consent-header { font-weight: bold; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .consent-actions { display: flex; gap: 15px; margin-top: 25px; }
+
+        /* Surveys */
+        .survey-question { margin-bottom: 30px; text-align: left; }
+        .likert-scale { display: flex; justify-content: space-between; max-width: 500px; margin-top: 10px; font-size: 14px; }
+        .radio-scale { display: flex; justify-content: flex-start; gap: 20px; margin-top: 10px; font-size: 14px; flex-wrap: wrap; }
+        label { cursor: pointer; }
+
+        /* Task & Canvas */
+        #instruction-pane { font-family: 'Georgia', serif; line-height: 1.6; }
+        #stanza-container { font-family: 'Georgia', serif; font-size: 18px; margin-bottom: 30px; line-height: 2.0; }
+        
+        /* Mobile-optimized touch targets */
+        .erasable-word { cursor: pointer; padding: 4px 6px; transition: 0.2s; border-radius: 3px; }
+        .redacted { background-color: #000; color: #000; }
+        .locked .erasable-word { cursor: default; }
+
+        /* Shared Buttons */
+        button { padding: 10px 20px; font-size: 15px; cursor: pointer; background-color: #333; color: white; border: none; border-radius: 4px; margin-top: 10px;}
+        button.decline-btn { background-color: #fff; color: #333; border: 1px solid #ccc; }
+        button.decline-btn:hover { background-color: #f5f5f5; }
+        button:hover { background-color: #555; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        
+    </style>
+</head>
+<body>
+
+    <div id="study-container">
+        
+        <!-- Phase 0: Informed Consent -->
+ <!-- Phase 0: Informed Consent -->
+ <div id="consent-pane">
+ <div class="consent-header">Informed Consent for Participation in
+Research</div>
+ <p>You are invited to participate in a research study evaluating erasure
+poetry practices as a mode of critical engagement with AI output. Your participation
+is completely voluntary.</p>
+ <p><strong>Procedure:</strong> If you agree to participate, you will be
+asked to complete a brief pre-task survey, you will be shown a stanza of poetry
+produced by AI, you will perform an interactive erasure task, and answer a few
+post-task questions. The entire module should take approximately 5 minutes.</p>
+ <p><strong>Risks & Benefits:</strong> There are no anticipated risks to
+participating in this study beyond those encountered in everyday life. While you may
+not experience direct benefits, your responses will contribute to our understanding
+of human-AI interaction.</p>
+ <p><strong>Confidentiality:</strong> Your responses will be timestamped
+and collected anonymously. Please do not enter personally identifying information.
+No personally identifying information will be linked to your survey answers or your
+task interactions.</p>
+ <p><strong>Right to Withdraw:</strong> You are free to decline to
+participate or to withdraw from the study at any time by closing your browser
+window. However, any data already entered will be transferred to the open-access
+repository at Open Science Foundation
+(https://osf.io/4j9r5/overview?view_only=8a3cefe540ae4a4ba12da6069ef4265a).</p>
+ <p><strong>If you have any questions or would like a complete copy of
+the Participant Information Sheet, please contact Edward Wells
+(edward.wells@uopeople.edu / ecw.the.2nd@gmail.com) with Erasure Practice as Critical
+Engagement with AI Output in the subject line.</strong></p>
+ <p><strong>In case of complaints:</strong>
+Any concerns about the study should be directed to Edward Wells
+(edward.wells@uopeople.edu / ecw.the.2nd@gmail.com).</p>
+ <p>By clicking "I Agree" below, you confirm that you are at least 18
+years of age, have read the information provided, and voluntarily consent to
+participate.</p>
+            <div class="consent-actions">
+                <button type="button" id="btn-agree">I Agree, Begin Study</button>
+                <button type="button" id="btn-decline" class="decline-btn">I Do Not Agree</button>
+            </div>
+        </div>
+
+        <!-- Phase 0.5: Preliminary Questions -->
+        <div id="preliminary-survey">
+            <h3>Preliminary Questions</h3>
+            <div class="survey-question">
+                <label>1. Are you currently enrolled as a student in a formal education program?</label>
+                <div class="radio-scale">
+                    <label><input type="radio" name="prelim_student" value="Yes"> Yes</label>
+                    <label><input type="radio" name="prelim_student" value="No"> No</label>
+                </div>
+            </div>
+
+            <div class="survey-question">
+                <label>2. Have you previously completed this survey?</label>
+                <div class="radio-scale">
+                    <label><input type="radio" name="prelim_repeat" value="Yes"> Yes</label>
+                    <label><input type="radio" name="prelim_repeat" value="No"> No</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-prelim" disabled>Continue</button>
+        </div>
+
+        <!-- Phase 1: Pre-Task Survey -->
+        <div id="baseline-survey">
+            <h3>Pre-Task Survey</h3>
+            <div class="survey-question">
+                <label>1. How often do you use generative AI?</label>
+                <div class="radio-scale">
+                    <label><input type="radio" name="pre_freq" value="Daily"> Daily</label>
+                    <label><input type="radio" name="pre_freq" value="Weekly"> Weekly</label>
+                    <label><input type="radio" name="pre_freq" value="Rarely"> Rarely</label>
+                    <label><input type="radio" name="pre_freq" value="Never"> Never</label>
+                </div>
+            </div>
+
+            <div class="survey-question">
+                <label>2. How comfortable are you with critically questioning the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="pre_critical" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="pre_critical" value="2"> 2</label>
+                    <label><input type="radio" name="pre_critical" value="3"> 3</label>
+                    <label><input type="radio" name="pre_critical" value="4"> 4</label>
+                    <label><input type="radio" name="pre_critical" value="5"> 5 (Very)</label>
+                </div>
+            </div>
+
+            <div class="survey-question">
+                <label>3. How confident are you with revising the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="pre_revise" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="pre_revise" value="2"> 2</label>
+                    <label><input type="radio" name="pre_revise" value="3"> 3</label>
+                    <label><input type="radio" name="pre_revise" value="4"> 4</label>
+                    <label><input type="radio" name="pre_revise" value="5"> 5 (Very)</label>
+                </div>
+            </div>
+            <button type="button" id="btn-next-pre" disabled>Continue to Instructions</button>
+        </div>
+
+        <!-- Phase 2: Instructions (Dynamically Injected) -->
+        <div id="instruction-pane"></div>
+
+        <!-- Phase 3: Erasure Interaction -->
+        <div id="stanza-container"></div>
+        <button type="button" id="finish-poem-btn">Lock Erasure & Continue</button>
+
+        <!-- Phase 4: Post-Task Survey -->
+        <div id="post-survey-a">
+            <h3>Post-Task Survey</h3>
+            <div class="survey-question">
+                <label>1. How comfortable are you with critically questioning the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="post_a_critical" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="post_a_critical" value="2"> 2</label>
+                    <label><input type="radio" name="post_a_critical" value="3"> 3</label>
+                    <label><input type="radio" name="post_a_critical" value="4"> 4</label>
+                    <label><input type="radio" name="post_a_critical" value="5"> 5 (Very)</label>
+                </div>
+            </div>
+            <div class="survey-question">
+                <label>2. How confident are you with revising the output of AI?</label>
+                <div class="likert-scale">
+                    <label><input type="radio" name="post_a_revise" value="1"> 1 (Not at all)</label>
+                    <label><input type="radio" name="post_a_revise" value="2"> 2</label>
+                    <label><input type="radio" name="post_a_revise" value="3"> 3</label>
+                    <label><input type="radio" name="post_a_revise" value="4"> 4</label>
+                    <label><input type="radio" name="post_a_revise" value="5"> 5 (Very)</label>
+                </div>
+            </div>
+            <div class="survey-question">
+                <label>3. Do you prefer the AI stanza or your erasure?</label>
+                <div class="radio-scale">
+                    <label><input type="radio" name="post_a_pref" value="AI Stanza"> The AI Stanza</label>
+                    <label><input type="radio" name="post_a_pref" value="My Erasure"> My Erasure</label>
+                </div>
+            </div>
+            <button type="button" id="submit-btn-a" disabled>Submit Final Data</button>
+        </div>
+
+        <!-- Final Message Container -->
+        <div id="final-message"></div>
+
+    </div>
+
+    <script>
+        // Detect current HTML filename from URL path (defaults to 'index.html' if root)
+        const currentPageFile = window.location.pathname.split('/').pop() || 'index.html';
+        const pageBaseName = currentPageFile.replace(/\.[^/.]+\$/, ""); // Strips .html for clean OSF filenames
+
+        // 0. Global Data Payload Object
+        const studyData = {
+            participant_id: generateID(),
+            source_page: currentPageFile,
+            source_url: window.location.href,
+            start_time: new Date().toISOString(),
+            task_condition: "", // Tracks control vs experimental
+            presented_stanza: "",
+            stanza_start_time: null, 
+            erased_words: [], 
+            survey_prelim: {},
+            survey_pre: {},
+            survey_post: {}
+        };
+
+        function generateID() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+
+        // 1. Establish Task Condition (Control = Read Only, Experimental = Erasure)
+        const taskCondition = Math.random() < 0.5 ? 'control' : 'experimental';
+        studyData.task_condition = taskCondition;
+
+        // 2. DOM Variables
+        const consentPane = document.getElementById('consent-pane');
+        const btnAgree = document.getElementById('btn-agree');
+        const btnDecline = document.getElementById('btn-decline');
+
+        const preliminarySurvey = document.getElementById('preliminary-survey');
+        const btnNextPrelim = document.getElementById('btn-next-prelim');
+
+        const baselineSurvey = document.getElementById('baseline-survey');
+        const btnNextPre = document.getElementById('btn-next-pre');
+
+        const instructionPane = document.getElementById('instruction-pane');
+        const stanzaContainer = document.getElementById('stanza-container');
+        const finishPoemBtn = document.getElementById('finish-poem-btn');
+
+        const postSurveyA = document.getElementById('post-survey-a');
+        const submitBtnA = document.getElementById('submit-btn-a');
+        const finalMessage = document.getElementById('final-message');
+
+        let isLocked = false;
+
+        // 3. Stanza Data
+        const stanzas = [
+            {
+                id: "stanza_A_Tampa",
+                content: `
+                    <span id="word-1" class="erasable-word">Where</span> 
+                    <span id="word-2" class="erasable-word">palm</span> 
+                    <span id="word-3" class="erasable-word">trees</span> 
+                    <span id="word-4" class="erasable-word">lean</span> 
+                    <span id="word-5" class="erasable-word">toward</span> 
+                    <span id="word-6" class="erasable-word">painted</span> 
+                    <span id="word-7" class="erasable-word">poles,</span><br>
+                    <span id="word-8" class="erasable-word">and</span> 
+                    <span id="word-9" class="erasable-word">crossing</span> 
+                    <span id="word-10" class="erasable-word">gates</span> 
+                    <span id="word-11" class="erasable-word">divide</span> 
+                    <span id="word-12" class="erasable-word">the</span> 
+                    <span id="word-13" class="erasable-word">sky,</span><br>
+                    <span id="word-14" class="erasable-word">a</span> 
+                    <span id="word-15" class="erasable-word">quiet</span> 
+                    <span id="word-16" class="erasable-word">street</span> 
+                    <span id="word-17" class="erasable-word">remembers</span> 
+                    <span id="word-18" class="erasable-word">trains</span><br>
+                    <span id="word-19" class="erasable-word">that</span> 
+                    <span id="word-20" class="erasable-word">used</span> 
+                    <span id="word-21" class="erasable-word">to</span> 
+                    <span id="word-22" class="erasable-word">rumble,</span> 
+                    <span id="word-23" class="erasable-word">passing</span> 
+                    <span id="word-24" class="erasable-word">by—</span><br>
+                    <span id="word-25" class="erasable-word">now</span> 
+                    <span id="word-26" class="erasable-word">only</span> 
+                    <span id="word-27" class="erasable-word">clouds</span> 
+                    <span id="word-28" class="erasable-word">move</span> 
+                    <span id="word-29" class="erasable-word">overhead</span><br>
+                    <span id="word-30" class="erasable-word">where</span> 
+                    <span id="word-31" class="erasable-word">steel</span> 
+                    <span id="word-32" class="erasable-word">and</span> 
+                    <span id="word-33" class="erasable-word">memory</span> 
+                    <span id="word-34" class="erasable-word">both</span> 
+                    <span id="word-35" class="erasable-word">lie.</span>`
+            },
+            {
+                id: "stanza_B_New_York",
+                content: `
+                    <span id="word-1" class="erasable-word">Mirrored</span> 
+                    <span id="word-2" class="erasable-word">stillness,</span> 
+                    <span id="word-3" class="erasable-word">nature's</span> 
+                    <span id="word-4" class="erasable-word">jewel,</span><br>
+                    <span id="word-5" class="erasable-word">Glassy</span> 
+                    <span id="word-6" class="erasable-word">waters</span> 
+                    <span id="word-7" class="erasable-word">capture</span> 
+                    <span id="word-8" class="erasable-word">sky's</span> 
+                    <span id="word-9" class="erasable-word">pale</span> 
+                    <span id="word-10" class="erasable-word">hue.</span><br>
+                    <span id="word-11" class="erasable-word">Bare</span> 
+                    <span id="word-12" class="erasable-word">branches</span> 
+                    <span id="word-13" class="erasable-word">etched</span> 
+                    <span id="word-14" class="erasable-word">in</span> 
+                    <span id="word-15" class="erasable-word">liquid</span> 
+                    <span id="word-16" class="erasable-word">pool,</span><br>
+                    <span id="word-17" class="erasable-word">Tranquil</span> 
+                    <span id="word-18" class="erasable-word">beauty</span> 
+                    <span id="word-19" class="erasable-word">ever</span> 
+                    <span id="word-20" class="erasable-word">renews.</span>`
+            },
+            {
+                id: "stanza_C_London",
+                content: `
+                    <span id="word-1" class="erasable-word">A</span> 
+                    <span id="word-2" class="erasable-word">bridge</span> 
+                    <span id="word-3" class="erasable-word">spanning</span> 
+                    <span id="word-4" class="erasable-word">the</span> 
+                    <span id="word-5" class="erasable-word">river,</span><br>
+                    <span id="word-6" class="erasable-word">Connecting</span> 
+                    <span id="word-7" class="erasable-word">shores,</span> 
+                    <span id="word-8" class="erasable-word">a</span> 
+                    <span id="word-9" class="erasable-word">link</span> 
+                    <span id="word-10" class="erasable-word">so</span> 
+                    <span id="word-11" class="erasable-word">clever.</span><br>
+                    <span id="word-12" class="erasable-word">Clouds</span> 
+                    <span id="word-13" class="erasable-word">above,</span> 
+                    <span id="word-14" class="erasable-word">a</span> 
+                    <span id="word-15" class="erasable-word">somber</span> 
+                    <span id="word-16" class="erasable-word">sky,</span><br>
+                    <span id="word-17" class="erasable-word">Reflecting</span> 
+                    <span id="word-18" class="erasable-word">on</span> 
+                    <span id="word-19" class="erasable-word">the</span> 
+                    <span id="word-20" class="erasable-word">waters</span> 
+                    <span id="word-21" class="erasable-word">nearby.</span>`
+            }
+        ];
+
+        // 4. Initialize Random Stanza
+        const randomIndex = Math.floor(Math.random() * stanzas.length);
+        const chosenStanza = stanzas[randomIndex];
+        studyData.presented_stanza = chosenStanza.id; 
+        stanzaContainer.innerHTML = chosenStanza.content; 
+
+        // 5. Validation Logic Helper
+        function enableButtonWhenAnswered(containerId, buttonId, radioGroups) {
+            const container = document.getElementById(containerId);
+            const button = document.getElementById(buttonId);
+            container.addEventListener('change', () => {
+                let allAnswered = true;
